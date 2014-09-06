@@ -1,7 +1,6 @@
 # Clatern
 
-Machine learning in Clojure as easy as 1,2,3
-This library is a work in progress and is not to be used for any serious purposes.
+Machine learning in Clojure as easy as 1,2,3. This library is a work in progress and is currently not to be used for any serious purposes.
 
 ## Usage
 
