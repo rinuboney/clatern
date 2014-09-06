@@ -1,7 +1,7 @@
 (ns clatern.linear-regression
-  (:use [clojure.core.matrix]
-        [clojure.core.matrix.dataset])
-  (:require [clatern.protocols :as cp]
+  (:require [clojure.core.matrix :refer :all]
+            [clojure.core.matrix.dataset :refer :all]
+            [clatern.protocols :as cp]
             [clatern.implementations :as imp]))
 
 (defn- ols [MX y]
