@@ -6,7 +6,7 @@
   (imp/get-canonical-object key))
 
 (defn set-options [m options]
-  (cp/get-options m options))
+  (cp/set-options m options))
 
 (defn fit [m data]
   (cp/fit m data))
