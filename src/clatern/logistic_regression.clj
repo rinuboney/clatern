@@ -18,10 +18,12 @@
         if-1 (mmul (transpose (log (M/- 1 h))) (M/- 1 y))]
     (emul (/ -1 m) (M/- if-0 if-1))))
 
-(defn grad [X y theta]
+(defn grad [X y theta lambda]
   (let [h (map #(hypothesis % theta) (rows X))
-        m (count y)]    
-    (M/* (/ 1 m) (mmul (transpose X) (M/- h y)))))
+        m (count y)
+        theta0 (vec (conj (rest theta) 0))]    
+    (M/+ (M/* (/ 1 m) (mmul (transpose X) (M/- h y)))
+         (M/* lambda theta0))))
 
 (defn classify [all_theta X]
   (let [all_h (for [i (keys all_theta)]
@@ -41,7 +43,8 @@
           X_1 (transpose (join [(repeat (column-count X) 1)] X))
           y (get-row (:columns (select-columns new-data ["output"])) 0)
           options {:alpha (:alpha (:params m))
-                   :num-iters (:num-iters (:params m))}
+                   :num-iters (:num-iters (:params m))
+                   :lambda (:lambda (:params m))}
           init-theta (vec (repeat (column-count X_1) 0))
           labels (distinct y)
           all_y (for [i labels] (map #(if (= i %) 1 0) y))

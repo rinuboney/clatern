@@ -3,9 +3,10 @@
 
 (defn gradient-descent [X y grad init-theta options]
   (let [alpha (or (:alpha options) 0.1)
-        num-iters (or (:num-iters options) 100)]
+        num-iters (or (:num-iters options) 100)
+        lambda (or (:lambda options) 0)]
     (loop [i 0 theta init-theta]
       (if (= i num-iters)
         theta
         (recur (inc i)
-               (M/- theta (M/* alpha (grad X y theta))))))))
+               (M/- theta (M/* alpha (grad X y theta lambda))))))))
