@@ -26,8 +26,7 @@
 (defn classify [all_theta X]
   (let [all_h (for [i (keys all_theta)]
                 (hypothesis X (all_theta i)))
-        all_h (map vector (keys all_theta) all_h)
-        fk (println "Classify : " all_h)]
+        all_h (map vector (keys all_theta) all_h)]
     (first (last (sort-by last all_h)))))
 
 (defrecord LogisticRegression [params]
