@@ -4,7 +4,8 @@
 (def IMPLEMENTATIONS
   (array-map
    :knn 'clatern.knn
-   :linear-regression 'clatern.linear-regression))
+   :linear-regression 'clatern.linear-regression
+   :logistic-regression 'clatern.logistic-regression))
 
 (defonce canonical-objects (atom {}))
 
