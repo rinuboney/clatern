@@ -4,6 +4,7 @@
 (def IMPLEMENTATIONS
   (array-map
    :knn 'clatern.knn
+   :kmeans 'clatern.kmeans
    :linear-regression 'clatern.linear-regression
    :logistic-regression 'clatern.logistic-regression))
 
