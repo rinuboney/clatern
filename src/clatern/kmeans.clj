@@ -5,28 +5,28 @@
             [clatern.implementations :as imp]
             [clatern.protocols :as cp]))
 
-(defn cost-fn [X mu m]
+(defn- cost-fn [X mu m]
   (M/* (/ 1 m) (pow (M/- X mu) 2)))
 
-(defn rand-centroids [X k lim]
+(defn- rand-centroids [X k lim]
   (map #(get-row X %) (take k (repeatedly #(rand-int lim)))))
 
-(defn calculate-distances [X centroid]
+(defn- calculate-distances [X centroid]
   (pow (map #(reduce + %)
             (pow (sub X centroid)
                  2))
        0.5))
 
-(defn cluster-assign [X centroids]
+(defn- cluster-assign [X centroids]
   (let [cs (map last (seq centroids))
         distances (map #(calculate-distances X %) cs)]
     (map #(first (apply min-key second (map-indexed vector %))) (columns distances))))
 
-(defn calc-centroid [vals]
+(defn- calc-centroid [vals]
   (let [n (count vals)]
     (M// (map #(reduce + %) (transpose vals)) n)))
 
-(defn move-centroids [X output centroids]
+(defn- move-centroids [X output centroids]
   (let [indexed-op (map-indexed vector output)]
     (for [i (map first centroids)]
       (let [indices (map first (filter #(= (last %) i) indexed-op))
