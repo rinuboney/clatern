@@ -4,10 +4,14 @@
             [clojure.data.csv :as csv]
             [clojure.java.io :as io]))
 
+(defn- read-numbers [val]
+  (let [n (read-string val)]
+    (if (number? n) n val)))
+
 (defn load-data [filename]
-  (matrix (with-open [in-file (io/reader filename)]
-            (doall
-             (csv/read-csv in-file)))))
+  (emap read-numbers (matrix (with-open [in-file (io/reader filename)]
+                              (doall
+                               (csv/read-csv in-file))))))
 
 (defn load-dataset [filename]
   (let [data (load-data filename)]
