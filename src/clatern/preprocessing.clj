@@ -8,6 +8,7 @@
 
 (defmulti fit (fn [model data coder] coder))
 (defmulti encode (fn [model data coder] coder))
+(defmulti decode (fn [model data coder] coder))
 
 (defn set-options
   [model options coder]
@@ -27,6 +28,9 @@
 (defn- mean-norm-arg [X mu sd]
   (M// (M/- X mu) sd))
 
+(defn- de-mean-norm-arg [X mu sd]
+  (M/+ mu (M/* X sd)))
+
 (defmethod encode :mean-normalization
   [model data coder]
   (let [metadata (:mean-normalization (:preprocessing model))
@@ -39,10 +43,25 @@
     (merge-datasets (except-columns data col-names)
                     (dataset col-names normalized))))
 
+(defmethod decode :mean-normalization
+  [model data coder]
+  (let [metadata (:mean-normalization (:preprocessing model))
+        col-names (:column-names metadata)
+        cols (transpose (:columns (select-columns data col-names)))
+        mu (:mean metadata)
+        std (:sd metadata)
+        denormalized (matrix (map #(de-mean-norm-arg % mu std)
+                                      (rows cols)))]
+    (merge-datasets (except-columns data col-names)
+                    (dataset col-names denormalized))))
+
 ; Min Max Scaling
 
 (defn- min-max-scale [X min max]
   (M// (M/- X min) (M/- max min)))
+
+(defn- de-min-max-scale [X min max]
+  (M/+ min (M/* X (M/- max min))))
 
 (defmethod fit :min-max-scaling
   [model data coder]
@@ -64,3 +83,14 @@
         scaled (matrix (map #(min-max-scale % cmin cmax) (rows cols)))]
     (merge-datasets (except-columns data column-names)
                     (dataset column-names scaled))))
+
+(defmethod decode :min-max-scaling
+  [model data coder]
+  (let [metadata (:min-max-scaling (:preprocessing model))
+        column-names (:column-names metadata)
+        cols (transpose (:columns (select-columns data column-names)))
+        cmin (:min metadata)
+        cmax (:max metadata)
+        descaled (matrix (map #(de-min-max-scale % cmin cmax) (rows cols)))]
+    (merge-datasets (except-columns data column-names)
+                    (dataset column-names descaled))))
