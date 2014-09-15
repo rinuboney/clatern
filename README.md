@@ -3,12 +3,15 @@
 Machine learning in Clojure as easy as 1,2,3. This library is a work in progress and is currently not to be used for any serious purposes.
 
 ## Features
+
 #### I/O:
 - Read and write dataset from/to csv files
+
 #### Preprocessing:
 - Mean Normalizaion
 - Min Max Scaling
 - Label Encoding
+
 #### Algorithms:
 - Linear Regression
 - Logistic Regression
