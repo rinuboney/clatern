@@ -4,7 +4,7 @@
             [clojure.core.matrix.operators :as M]
             [clojure.core.matrix.stats :refer :all]))
 
-; API
+;; API
 
 (defmulti fit (fn [model data coder] coder))
 (defmulti encode (fn [model data coder] coder))
@@ -14,7 +14,7 @@
   [model options coder]
   (assoc model :preprocessing (assoc (:preprocessing model) coder options)))
 
-; Mean Normalization
+;; Mean Normalization
 (defmethod fit :mean-normalization
   [model data coder]
   (let [metadata (:mean-normalization (:preprocessing model))
@@ -55,7 +55,7 @@
     (merge-datasets (except-columns data col-names)
                     (dataset col-names denormalized))))
 
-; Min Max Scaling
+;; Min Max Scaling
 
 (defn- min-max-scale [X min max]
   (M// (M/- X min) (M/- max min)))
@@ -94,3 +94,42 @@
         descaled (matrix (map #(de-min-max-scale % cmin cmax) (rows cols)))]
     (merge-datasets (except-columns data column-names)
                     (dataset column-names descaled))))
+
+;; Label Encoding
+
+(defmethod fit :label-encoding
+  [model data coder]
+  (let [metadata (coder (:preprocessing model))
+        column-names (:column-names metadata)
+        cols (transpose (:columns (select-columns data column-names)))
+        labels (map distinct (columns cols))
+        metadata (merge metadata {:labels labels})]
+    (assoc model :preprocessing (assoc (:preprocessing model) coder metadata))))
+
+(defmethod encode :label-encoding
+  [model data coder]
+  (let [metadata (coder (:preprocessing model))
+        column-names (:column-names metadata)
+        cols (:columns (select-columns data column-names))
+        labels (:labels metadata)
+        coded (for [i (range (count column-names))]
+                (let [col (nth cols i)
+                      ilabels (nth labels i)]
+                  (map #(.indexOf ilabels %) col)))
+        coded (transpose coded)]
+    (merge-datasets (except-columns data column-names)
+                    (dataset column-names coded))))
+
+(defmethod decode :label-encoding
+  [model data coder]
+  (let [metadata (coder (:preprocessing model))
+        column-names (:column-names metadata)
+        cols (:columns (select-columns data column-names))
+        labels (:labels metadata)
+        decoded (for [i (range (count column-names))]
+                (let [col (nth cols i)
+                       ilabels (nth labels i)]
+                  (map #(nth ilabels %) col)))
+        decoded (transpose decoded)]
+    (merge-datasets (except-columns data column-names)
+                    (dataset column-names decoded))))
