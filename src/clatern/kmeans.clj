@@ -12,10 +12,7 @@
   (map #(get-row X %) (take k (repeatedly #(rand-int lim)))))
 
 (defn- calculate-distances [X centroid]
-  (pow (map #(reduce + %)
-            (pow (sub X centroid)
-                 2))
-       0.5))
+  (map #(distance % centroid) X))
 
 (defn- calc-centroid [vals]
   (let [n (count vals)]
@@ -39,14 +36,14 @@
 
 (defn- assign-cluster
   "Assign cluster for a new vector"
-  [centroids new]
+  [centroids v]
   (let [cs (map last (seq centroids))
-        distances (calculate-distances cs new)]
+        distances (calculate-distances cs v)]
     (first (apply min-key second (map-indexed vector distances)))))
 
 (defrecord kMeans [centroids]
   clojure.lang.IFn
-  (invoke [this new] (assign-cluster centroids new))
+  (invoke [this v] (assign-cluster centroids v))
   (applyTo [this args] (clojure.lang.AFn/applyToHelper this args)))
 
 (defn kmeans [X & {:keys [k num-iters]

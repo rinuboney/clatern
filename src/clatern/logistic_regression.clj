@@ -23,16 +23,16 @@
     (M/+ (M/* (/ 1 m) (mmul (transpose X) (M/- h y)))
          (M/* lambda theta0))))
 
-(defn- classify [all_theta new]
-  (let [new_1 (cons 1 new)
+(defn- classify [all_theta v]
+  (let [v_1 (cons 1 v)
         all_h (for [i (keys all_theta)]
-                (hypothesis new_1 (all_theta i)))
+                (hypothesis v_1 (all_theta i)))
         all_h (map vector (keys all_theta) all_h)]
     (first (last (sort-by last all_h)))))
 
 (defrecord LogisticRegression [thetas]
   clojure.lang.IFn
-  (invoke [this new] (classify thetas new))
+  (invoke [this v] (classify thetas v))
   (applyTo [this args] (clojure.lang.AFn/applyToHelper this args)))
 
 (defn gradient-descent [X y & {:keys [alpha lambda num-iters]
