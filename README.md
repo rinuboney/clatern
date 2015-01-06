@@ -14,6 +14,7 @@ Machine learning in Clojure as easy as 1,2,3. This library is a work in progress
 #### Models:
 - Linear Regression
 - Logistic Regression
+- Naive Bayes
 - kNN
 - KMeans Clustering
 
