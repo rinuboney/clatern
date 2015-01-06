@@ -2,6 +2,11 @@
   (:require [clojure.core.matrix :refer :all]
             [clojure.core.matrix.dataset :refer :all]))
 
+;; Ordinary Least Squares
+;; ======================
+;;  X : input data
+;;  y : target data
+
 (defn- predict [coefs v]
   {:pre [(= (count coefs) (+ 1 (count v)))]}
   (let [v_1 (conj v 1)
@@ -19,3 +24,6 @@
         Xt-X (mmul Xt X_1)
         coefs (matrix (mmul (inverse Xt-X) Xt y))]
     (LinearRegression. coefs)))
+
+
+;; TODO: implement gradient descent support 

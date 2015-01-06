@@ -3,6 +3,12 @@
             [clojure.core.matrix.dataset :refer :all]
             [clojure.core.matrix.operators :as M]))
 
+;; kMeans Classification
+;; =====================
+;;  X : input data
+;;  k : number of clusters
+;;  num-iters : number of iterations
+
 (defn- cost-fn [X mu m]
   (M/* (/ 1 m) (pow (M/- X mu) 2)))
 

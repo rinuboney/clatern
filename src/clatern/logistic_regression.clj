@@ -4,6 +4,14 @@
             [clojure.core.matrix.operators :as M]
             [clatern.optimization :as optm]))
 
+;; Gradient Descent
+;; ================
+;;  X : input data
+;;  y : target data
+;;  alpha : learning rate
+;;  lambda : regularization parameter
+;;  num-iters : number of iterations
+
 (defn- sigmoid [z]
   (M// 1 (M/+ 1 (exp (M/- z)))))
 
@@ -16,14 +24,18 @@
         if-1 (mmul (transpose (log (M/- 1 h))) (M/- 1 y))]
     (emul (/ -1 m) (M/- if-0 if-1))))
 
-(defn- grad [X y theta lambda]
+(defn- grad
+  "gradient function"
+  [X y theta lambda]
   (let [h (map #(hypothesis % theta) (rows X))
         m (count y)
         theta0 (vec (conj (rest theta) 0))]    
     (M/+ (M/* (/ 1 m) (mmul (transpose X) (M/- h y)))
          (M/* lambda theta0))))
 
-(defn- classify [all_theta v]
+(defn- classify
+  "classify a given input"
+  [all_theta v]
   (let [v_1 (cons 1 v)
         all_h (for [i (keys all_theta)]
                 (hypothesis v_1 (all_theta i)))
