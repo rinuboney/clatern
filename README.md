@@ -1,5 +1,7 @@
 # Clatern
 
+[![Clojars Project](http://clojars.org/clatern/latest-version.svg)](http://clojars.org/clatern)
+
 Machine learning in Clojure as easy as 1,2,3. This library is a work in progress and is currently not to be used for any serious purposes.
 
 ## Features

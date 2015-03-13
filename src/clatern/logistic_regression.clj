@@ -52,7 +52,7 @@
                                     lambda 1
                                     num-iters 100}}]
   (let [X_1 (join-along 1 (transpose [(repeat (row-count X) 1)]) X)
-        labels (distinct y)
+        labels (set y)
         init-theta (vec (repeat (column-count X_1) 0))
         all_y (for [i labels] (map #(if (= i %) 1 0) y))
         all_theta (map #(optm/gradient-descent X_1 % grad init-theta alpha lambda num-iters) all_y)          
