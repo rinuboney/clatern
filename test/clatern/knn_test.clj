@@ -9,9 +9,12 @@
              [0 1 0 0]
              [1 0 0 0]]
           y [0 1 0 1]
-          v1 [0 0 0 0.95]
-          y1 (knn X y v1 :k 1)
+          v [0 0 0 0.95]
+          k 1
+          model (knn X y :k k)
+          y1 (model v)
           expected 0]
+      (is (= (:k model) k))
       (is (= y1 expected))))
 
   (testing "k=3"
@@ -20,8 +23,11 @@
              [0 1 0 0]
              [1 0 0 0]]
           y [0 1 0 1]
-          v1 [0 0.95 0.95 0.95]
-          y1 (knn X y v1 :k 3)
+          v [0 0.95 0.95 0.95]
+          k 3
+          model (knn X y :k k)
+          y1 (model v)
           expected 0]
+      (is (= (:k model) k))
       (is (= y1 expected)))))
 
