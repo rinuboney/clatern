@@ -8,10 +8,18 @@
 ;;  y : target data
 
 (defn- predict [coefs v]
-  {:pre [(= (count coefs) (+ 1 (count v)))]}
-  (let [v_1 (conj v 1)
-        product (map * v_1 coefs)]
-    (reduce + product)))
+  {:pre [(let [ncoefs (dimension-count coefs 0)
+               lastdim (- (dimensionality v) 1)]
+           (or (= lastdim 0)
+               (= lastdim 1))
+           (= ncoefs (+ 1 (dimension-count v lastdim))))]}
+  (let [ndim (dimensionality v)
+        vs (if (= ndim 1) [v] v)
+        v_1 (join-along 1 (transpose [(repeat (row-count vs) 1)]) vs)
+        y (mmul v_1 coefs)]
+    (if (= ndim 1)
+      (mget y 0)
+      y)))
 
 (defrecord LinearRegression [coefs]
   clojure.lang.IFn
