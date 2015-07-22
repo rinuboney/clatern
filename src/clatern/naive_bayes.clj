@@ -1,4 +1,4 @@
-(ns clatern.naive_bayes
+(ns clatern.naive-bayes
   (:require [clojure.core.matrix :refer :all]
             [clojure.core.matrix.stats :refer :all]))
 
