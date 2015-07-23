@@ -1,13 +1,7 @@
 (ns clatern.metrics-test
   (:require [clojure.test :refer :all]
+            [clatern.test-utils :refer :all]
             [clatern.metrics :refer :all]))
-
-(def eps 1e-5)
-
-(defn- float-equals
-  "Compare floats within epsilon"
-  [x y eps]
-  (< (Math/abs (- x y)) eps))
 
 (deftest test-equal-vectors
   (testing "Equal vectors"
