@@ -2,7 +2,8 @@
   (:require [clojure.set :refer [difference]]
             [clojure.core.matrix :refer :all]
             [clojure.core.matrix.dataset :refer :all]
-            [clojure.core.matrix.operators :as M]))
+            [clojure.core.matrix.operators :as M]
+            [clatern.metrics :refer [euclidean-distance]]))
 
 ;; kMeans Classification
 ;; =====================
@@ -36,14 +37,14 @@
 
 (defn- assign-cluster
   "Assign cluster for a new vector"
-  [centroids v]
-  (let [centroid-distances (for [[idx centroid] centroids] [idx (distance centroid v)])]
+  [centroids v dist-metric]
+  (let [centroid-distances (for [[idx centroid] centroids] [idx (dist-metric centroid v)])]
   (apply min-key second centroid-distances)))
 
 (defn- cluster-assign
   "Assign clusters to all data items"
-  [X centroids]
-  (map #(assign-cluster centroids %) (rows X)))
+  [X centroids dist-metric]
+  (map #(assign-cluster centroids % dist-metric) (rows X)))
 
 (defn- reassign-if-necessary
   "Reassigns outlier points to empty clusters so that no clusters are empty"
@@ -68,22 +69,23 @@
         reassignments))))
             
 
-(defrecord kMeans [centroids]
+(defrecord kMeans [centroids dist-metric]
   clojure.lang.IFn
-  (invoke [this v] (first (assign-cluster centroids v)))
+  (invoke [this v] (first (assign-cluster centroids v dist-metric)))
   (applyTo [this args] (clojure.lang.AFn/applyToHelper this args)))
 
-(defn kmeans [X & {:keys [k num-iters]
+(defn kmeans [X & {:keys [k num-iters dist-metric]
                          :or {k 3
-                              num-iters 100}}]
+                              num-iters 100
+                              dist-metric euclidean-distance}}]
   (let [n (column-count X)
         lim (row-count X)
         init-centroids (map-indexed vector (rand-centroids X k lim))
         centroids (loop [i 0 centroids init-centroids]
                     (if (= i num-iters)
                       centroids
-                      (let [assignments (cluster-assign X centroids)
+                      (let [assignments (cluster-assign X centroids dist-metric)
                             reassignments (map first (reassign-if-necessary X assignments k))
                             new-centroids (move-centroids X reassignments centroids)]
                         (recur (inc i) new-centroids))))]
-    (kMeans. centroids)))
+    (kMeans. centroids dist-metric)))
