@@ -8,4 +8,8 @@
                  [org.clojure/data.csv "0.1.2"]
                  [net.mikera/core.matrix.stats "0.4.0"]]
   :scm {:name "git"
-        :url "https://github.com/rinuboney/clatern"})
+        :url "https://github.com/rinuboney/clatern"}
+  :plugins [[codox "0.8.13"]]
+  :codox {:src-dir-uri "https://github.com/rinuboney/clatern/blob/master/"
+          :src-linenum-anchor-prefix "L"
+          :defaults {:doc/format :markdown}})
