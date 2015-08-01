@@ -20,6 +20,30 @@ Machine learning in Clojure as easy as 1,2,3. This library is a work in progress
 - kNN
 - KMeans Clustering
 
+## Building and Running
+
+#### Tests
+Test can be run with:
+
+    lein test
+
+#### Jar
+To build the Clatern library jar:
+
+    lein jar
+
+#### Uber Jar
+To build the Clatern library uber jar:
+
+    lein uberjar
+
+#### Documentation
+To generate the Clatern docs:
+
+    lein doc
+
+Documents will be located under the `doc` directory.
+
 ## License
 
 Copyright © 2014 Rinu Boney
