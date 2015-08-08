@@ -19,6 +19,7 @@ Machine learning in Clojure as easy as 1,2,3. This library is a work in progress
 - Naive Bayes
 - kNN
 - KMeans Clustering
+- Decision Trees
 
 ## Building and Running
 

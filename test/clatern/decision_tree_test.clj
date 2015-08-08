@@ -1,6 +1,7 @@
 (ns clatern.decision-tree-test
   (:require [clojure.test :refer :all]
             [clatern.decision-tree :refer :all]
+            [clatern.protocols :refer [predict-prob predict-log-prob]]
             [clatern.test-utils :refer :all]))
 
 (deftest test-gini
@@ -24,7 +25,6 @@
           expected 1.0
           observed (#'clatern.decision-tree/gini-impurity y indices)]
       (is (float-equals expected observed eps)))))
-
 
 
 (deftest test-find-optimal-threshold
@@ -68,7 +68,7 @@
           y [0 0 0 1 1 1]
           indices (range (count y))
           [feature-idx threshold cost left right] (#'clatern.decision-tree/find-best-split
-                                                   X y indices)
+                                                   X y range indices)
           expected-cost 0.0
           expected-idx 0
           expected-threshold 2]
@@ -126,11 +126,11 @@
              [4]]
           y [0 0 1 1]
           max-depth 3
-          tree (#'clatern.decision-tree/train-tree X y max-depth)]
+          tree (#'clatern.decision-tree/train-tree X y max-depth range (range (count y)))]
       (is (= (get-in tree [:left :type] :leaf)))
       (is (= (get-in tree [:right :type] :leaf)))
-      (is (= (count (get-in tree [:left :label-counts])) 1))
-      (is (= (count (get-in tree [:right :label-counts])) 1))
+      (is (= (get-in tree [:left :label-counts]) {0 2, 1 0}))
+      (is (= (get-in tree [:right :label-counts]) {0 0, 1 2}))
       (is (= (get-in tree [:threshold]) 2))))
 
   (testing "2 classes, 2 features, 4 clusters"
@@ -144,15 +144,15 @@
              [1 1]]
           y [0 0 1 1 1 1 0 0]
           max-depth 3
-          tree (#'clatern.decision-tree/train-tree X y max-depth)]
+          tree (#'clatern.decision-tree/train-tree X y max-depth range (range (count y)))]
       (is (= (get-in tree [:left :left :type] :leaf)))
       (is (= (get-in tree [:left :right :type] :leaf)))
       (is (= (get-in tree [:right :left :type] :leaf)))
       (is (= (get-in tree [:right :right :type] :leaf)))
-      (is (= (count (get-in tree [:left :left :label-counts])) 1))
-      (is (= (count (get-in tree [:left :right :label-counts])) 1))
-      (is (= (count (get-in tree [:right :left :label-counts])) 1))
-      (is (= (count (get-in tree [:right :right :label-counts])) 1))
+      (is (= (get-in tree [:left :left :label-counts]) {0 2, 1 0}))
+      (is (= (get-in tree [:left :right :label-counts]) {0 0, 1 2}))
+      (is (= (get-in tree [:right :left :label-counts]) {0 0, 1 2}))
+      (is (= (get-in tree [:right :right :label-counts]) {0 2, 1 0}))
       (is (= (get-in tree [:threshold]) 0))
       (is (= (get-in tree [:left :threshold]) 0))
       (is (= (get-in tree [:right :treshold] 0))))))
@@ -173,9 +173,74 @@
           v3 [1 0]
           v4 [1 1]
           max-depth 3
-          dt (decision-tree X y)]
+          dt (cart X y)
+          prob-v1 (predict-prob dt v1)
+          prob-v2 (predict-prob dt v2)
+          log-prob-v1 (predict-log-prob dt v1)
+          log-prob-v2 (predict-log-prob dt v2)]
       (is (some? (:tree dt)))
       (is (= (dt v1) 0))
       (is (= (dt v2) 1))
       (is (= (dt v3) 1))
-      (is (= (dt v4) 0)))))
+      (is (= (dt v4) 0))
+      (is (and 
+           (float-equals (prob-v1 0) 1.0 eps)
+           (float-equals (prob-v1 1) 0.0 eps)))
+      (is (and 
+           (float-equals (prob-v2 1) 1.0 eps)
+           (float-equals (prob-v2 0) 0.0 eps)))
+      (is (and 
+           (float-equals (log-prob-v1 0) 0.0 eps)
+           (< (log-prob-v1 1) (java.lang.Math/log eps))))
+      (is (and 
+           (float-equals (log-prob-v2 1) 0.0 eps)
+           (< (log-prob-v2 0) (java.lang.Math/log eps))))))
+
+  (testing "2 classes, 2 features, 4 clusters with elements specified"
+    (let [X [[0 0]
+             [0 0]
+             [0 1]
+             [0 1]
+             [1 0]
+             [1 0]
+             [1 1]
+             [1 1]]
+          y [0 0 1 1 1 1 0 0]
+          v1 [0 0]
+          v2 [0 1]
+          v3 [1 0]
+          v4 [1 1]
+          max-depth 3
+          dt (cart X y :elems [0 1 2 3])
+          prob-v1 (predict-prob dt v1)
+          prob-v2 (predict-prob dt v2)]
+      (is (some? (:tree dt)))
+      (is (= (dt v1) 0))
+      (is (= (dt v2) 1))
+      (is (= (dt v3) 0))
+      (is (= (dt v4) 1))
+      (is (float-equals (prob-v1 0) 1.0 eps))
+      (is (float-equals (prob-v2 1) 1.0 eps))))
+
+  (testing "2 classes, 2 features, 4 clusters with feature sampler"
+    (let [X [[0 0]
+             [0 0]
+             [0 1]
+             [0 1]
+             [1 0]
+             [1 0]
+             [1 1]
+             [1 1]]
+          y [0 0 0 0 1 1 1 1]
+          v1 [0 0]
+          v2 [0 1]
+          v3 [1 0]
+          v4 [1 1]
+          max-depth 3
+          dt (cart X y :feature-sampler #(vector (- % 2)))]
+      (is (some? (:tree dt)))
+      (is (= (dt v1) 0))
+      (is (= (dt v2) 0))
+      (is (= (dt v3) 1))
+      (is (= (dt v4) 1)))))
+      
