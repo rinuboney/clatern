@@ -2,11 +2,8 @@
   (:refer-clojure :exclude [partition])
   (:require [clojure.set :refer [union]]
             [clatern.protocols :refer [ClassProbabilityEstimator]]
+            [clatern.utils :refer [map-values]]
             [clojure.core.matrix :refer :all]))
-
-(defn- map-values
-  [f m]
-  (into {} (for [[k v] m] [k (f v)])))
 
 (defn- gini-impurity
   "The Gini index or impurity is the probability of the elements
