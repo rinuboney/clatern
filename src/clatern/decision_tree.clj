@@ -1,6 +1,7 @@
 (ns clatern.decision-tree
   (:refer-clojure :exclude [partition])
   (:require [clojure.set :refer [union]]
+            [clatern.protocols :refer [ClassProbabilityEstimator]]
             [clojure.core.matrix :refer :all]))
 
 (defn- map-values
@@ -66,11 +67,13 @@
   split which minimizes the cost.
 
   `X` is a `n_samples` x `n_features` feature matrix. `y` is a vector of
-  labels.  `elems` is a vector of sample indices to use."
-  [X y elems]
-  (let [n_samples (count elems)
-        n_features (dimension-count X 1)
-        feature-optimal-thresholds (for [idx (range n_features)]
+  labels.  `feature-sampler` is a function that takes the number of features
+  and returns a sequence of feature indices. `elems` is a vector of sample
+  indices to use."
+  [X y sample-features elems]
+  (let [n-features (dimension-count X 1)
+        features (sample-features n-features)
+        feature-optimal-thresholds (for [idx features]
                                      [idx (find-optimal-threshold X y elems idx)])
         [feature-idx [threshold cost left right]] (apply min-key #(second (second %))
                                                          feature-optimal-thresholds)]
@@ -94,45 +97,85 @@
   labels `y`.
 
   `X` is a `n_samples` x `n_features` feature matrix. `y` is a vector of labels.
-  `max-depth` is the maximum depth of the tree."
-  ([X y max-depth]
-   (train-tree X y max-depth 1 (range (count y))))
-  ([X y max-depth depth elems]
+  `max-depth` is the maximum depth of the tree. `feature-sampler` is a function
+  that takes the number of features and returns a sequence of feature indices.
+  `elems` is a list of sample indices to train the tree on -- indices can appear
+  multiple times."
+  ([X y max-depth feature-sampler elems]
+   (train-tree X y max-depth 1 feature-sampler elems))
+  ([X y max-depth depth feature-sampler elems]
    (let [n-elems (count elems)
-         [feature-idx threshold cost left right] (find-best-split X y elems)
-         label-counts (frequencies (map y elems))]
+         [feature-idx threshold cost left right] (find-best-split X y feature-sampler elems)
+         default-counts (into {} (map #(vector % 0) y))
+         label-counts (merge default-counts (frequencies (map y elems)))]
      (if (split-node? y max-depth (inc depth) left right)
        {:type :internal,
         :threshold threshold,
         :feature-idx feature-idx,
-        :left (train-tree X y max-depth (inc depth) left),
-        :right (train-tree X y max-depth (inc depth) right)}
+        :left (train-tree X y max-depth (inc depth) feature-sampler left),
+        :right (train-tree X y max-depth (inc depth) feature-sampler right)}
        {:label-counts label-counts,
         :type :leaf}))))
 
-(defn- predict
-  "Predicts the class of vector `v` based on decision tree `tree`."
+(defn- find-leaf-node
+  "Find leaf node for vector `v` in the decision tree `tree`."
   [tree v]
   (if (= (tree :type) :leaf)
-    (first (apply max-key second (tree :label-counts)))
+    tree
     (let [{feature-idx :feature-idx,
            threshold :threshold} tree
            feature-value (v feature-idx)
            child (if (<= feature-value threshold) :left :right)]
-      (predict (tree child) v))))
+      (find-leaf-node (tree child) v))))
+
+(defn- normalize
+  "Normalize counts"
+  [label-counts]
+  (let [leaf-elems (reduce + (vals label-counts))]
+    (map-values #(/ % leaf-elems) label-counts)))
+
+(defn- predict
+  "Predicts the class of vector `v` using a majority vote of the class distribution
+  from the leaf of a decision tree `tree`."
+  [tree v]
+  (let [leaf (find-leaf-node tree v)]
+    (first (apply max-key second (leaf :label-counts)))))
+
+(defn- predict-prob
+  "Predicts the class label probability distribution for the vector `v`."
+  [tree v]
+  (let [leaf (find-leaf-node tree v)]
+        (normalize (leaf :label-counts))))
+
+(defn- predict-log-prob
+  "Predicts the class label log probabilities for the vector `v`."
+  [tree v]
+  ; prevent log(0)
+  (map-values #(java.lang.Math/log (+ % 0.000001)) (predict-prob tree v)))
 
 (defrecord DecisionTree [tree]
   clojure.lang.IFn
   (invoke [this v] (predict tree v))
-  (applyTo [this args] (clojure.lang.AFn/applyToHelper this args)))
+  (applyTo [this args] (clojure.lang.AFn/applyToHelper this args))
+
+  ClassProbabilityEstimator
+  (predict-prob [this v] (predict-prob tree v))
+  (predict-log-prob [this v] (predict-log-prob tree v)))
       
 (defn decision-tree
   "Trains decision tree and returns model.
 
+  Implementation of the CART algorithm that uses Gini impurity to determine
+  the best splits and majority vote on the leaves' class label distributions
+  for predictions.  
+
   `X` is a `n_samples` x `n_features` feature matrix. `y` is a vector of a
   class labels. `max-depth` is optional (default 5) and controls the
-  maximum height of the tree."
-  [X y & {:keys [max-depth]
-          :or {max-depth 5}}]
-  (let [tree (train-tree X y max-depth)]
+  maximum height of the tree. `elems` is an (optional) list of samples to
+  use to train the tree -- indices can occur multiple times. `feature-sampler`
+  is an (optional, possibly non-deterministic) function that takes the number
+  of features and returns a list of indices to test for splits. "
+  [X y & {:keys [max-depth elems feature-sampler]
+          :or {max-depth 5 elems (range (count y)) feature-sampler range}}]
+  (let [tree (train-tree X y max-depth feature-sampler elems)]
     (DecisionTree. tree)))
