@@ -1,5 +1,6 @@
 (ns clatern.utils)
 
 (defn map-values
-  [f m]
-  (into {} (for [[k v] m] [k (f v)])))
+   "Apply function f to all values in map m"
+    [f m]
+    (zipmap (keys m) (map f (vals m))))

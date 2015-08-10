@@ -1,6 +1,7 @@
 (ns clatern.naive-bayes
   (:require [clojure.core.matrix :refer :all]
-            [clojure.core.matrix.stats :refer :all]))
+            [clojure.core.matrix.stats :refer :all]
+            [clatern.utils :refer [map-values]]))
 
 ;; Gaussian Naive Bayes
 ;; ====================
@@ -31,20 +32,15 @@
   (let [probs (class-probs v means sds priors)]
     (first (apply max-key second probs))))
 
-(defn- map-vals
-  "Apply function f to all values in map m"
-  [m f]
-  (zipmap (keys m) (map f (vals m))))
-
 (defn- calc-stats-per-class
   "calculate statistics of input data"
   [X y]
   (let [total (row-count X)
         seperated (group-by last (join-along 1 X y))
-        priors (map-vals seperated #(/ (count %) total))
-        seperated-y (map-vals seperated #(transpose (butlast (columns  %))))
-        means (map-vals seperated-y mean)
-        sds (map-vals seperated-y stdv)]
+        priors (map-values #(/ (count %) total) seperated)
+        seperated-y (map-values #(transpose (butlast (columns  %))) seperated)
+        means (map-values mean seperated-y)
+        sds (map-values stdv seperated-y)]
     [means sds priors]))
 
 (defrecord GaussianNB [means sds priors]
